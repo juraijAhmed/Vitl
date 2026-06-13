@@ -207,8 +207,15 @@ export default function VitalsScreen() {
               </View>
               <View style={styles.contactRight}>
                 <Text style={styles.contactPhone}>{contact.phone}</Text>
-                <TouchableOpacity style={styles.callButton}>
-                  <Phone size={16} color={Colors.brandGreen} />
+                <TouchableOpacity
+                  style={styles.callButton}
+                  onPress={() =>
+                    Linking.openURL(
+                      `tel:${contact.phone}`,
+                    )
+                  }
+                >
+                  <Phone size={20} color={Colors.brandGreen} />
                 </TouchableOpacity>
               </View>
             </View>
