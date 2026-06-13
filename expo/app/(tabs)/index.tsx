@@ -1,11 +1,9 @@
-/**
- * Vitals Screen — the hero ID card.
- * This is the Home tab. Shows the patient's medical ID card
- * with QR code, allergies, conditions, emergency contacts, and SOS button.
- */
+
 import { useRouter } from "expo-router";
-import React from "react";
+import React, { useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import QRCode from "react-native-qrcode-svg";
+import { supabase } from "@/lib/supabase";
 import {
   View,
   Text,
@@ -13,54 +11,32 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import * as Location from "expo-location";
-import * as Linking from "expo-linking";
 import { AlertTriangle, ChevronRight, Phone, Send } from "lucide-react-native";
-import Colors from "../../constants/colors";
-import { Fonts } from "../../constants/fonts";
-import { useProfile } from "../../context/ProfileContext";
+import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/fonts";
+import { useProfile } from "@/context/ProfileContext";
+
+console.log("SUPABASE URL:", process.env.EXPO_PUBLIC_SUPABASE_URL);
 
 export default function VitalsScreen() {
   const { profile } = useProfile();
   const router = useRouter();
-  const handleSOS = async () => {
-    try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
 
-      if (status !== "granted") {
-        alert("Location permission is required.");
-        return;
-      }
+  useEffect(() => {
+  async function testSupabase() {
+    const { data, error } = await supabase
+      .from("emergency_profiles")
+      .select("*")
+      .limit(1);
 
-      const location = await Location.getCurrentPositionAsync({
-        accuracy: Location.Accuracy.High,
-      });
+    console.log("SUPABASE DATA:", data);
+    console.log("SUPABASE ERROR:", error);
+  }
 
-      const { latitude, longitude } = location.coords;
+  testSupabase();
+}, []);
+  
 
-      const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
-
-      const message =
-        `🚨 SOS ALERT 🚨\n\n` +
-        `${profile.fullName} may need immediate assistance.\n\n` +
-        `Current Location:\n${mapsLink}`;
-
-      const primaryContact = profile.emergencyContacts.find(
-        (contact) => contact.priority === "primary",
-      );
-
-      if (!primaryContact) {
-        alert("No primary emergency contact found.");
-        return;
-      }
-
-      const smsUrl = `sms:${primaryContact.phone}?body=${encodeURIComponent(message)}`;
-      await Linking.openURL(smsUrl);
-    } catch (error) {
-      console.error(error);
-      alert("Failed to create SOS message.");
-    }
-  };
   const initials = (name: string): string =>
     name
       .split(" ")
@@ -99,17 +75,10 @@ export default function VitalsScreen() {
             </View>
             {/* QR placeholder */}
             <View style={styles.qrCode}>
-              <View style={styles.qrInner}>
-                <View style={styles.qrModule} />
-                <View style={styles.qrModule} />
-                <View style={styles.qrModule} />
-                <View style={[styles.qrModule, styles.qrModuleOff]} />
-                <View style={[styles.qrModule, styles.qrModuleOff]} />
-                <View style={styles.qrModule} />
-                <View style={styles.qrModule} />
-                <View style={styles.qrModule} />
-                <View style={[styles.qrModule, styles.qrModuleOff]} />
-              </View>
+             <QRCode
+  value={`https://vitl-web.vercel.app/e/${profile.emergencyId}`}
+  size={80}
+/>
             </View>
           </View>
 
@@ -133,9 +102,7 @@ export default function VitalsScreen() {
               <Text style={styles.infoChipLabel}>Age</Text>
             </View>
             <View style={styles.infoChip}>
-              <Text style={styles.infoChipValue}>
-                {profile.languagePreference.nativeLabel}
-              </Text>
+              <Text style={styles.infoChipValue}>{profile.languagePreference.nativeLabel}</Text>
               <Text style={styles.infoChipLabel}>Language</Text>
             </View>
           </View>
@@ -145,7 +112,9 @@ export default function VitalsScreen() {
         <View style={styles.allergyBand}>
           <View style={styles.allergyHeader}>
             <AlertTriangle size={18} color={Colors.alertRed} />
-            <Text style={styles.allergyTitle}>Allergies</Text>
+            <Text style={styles.allergyTitle}>
+              Allergies
+            </Text>
           </View>
           <View style={styles.allergyPillRow}>
             {profile.allergies.map((allergy) => (
@@ -207,15 +176,8 @@ export default function VitalsScreen() {
               </View>
               <View style={styles.contactRight}>
                 <Text style={styles.contactPhone}>{contact.phone}</Text>
-                <TouchableOpacity
-                  style={styles.callButton}
-                  onPress={() =>
-                    Linking.openURL(
-                      `tel:${contact.phone}`,
-                    )
-                  }
-                >
-                  <Phone size={20} color={Colors.brandGreen} />
+                <TouchableOpacity style={styles.callButton}>
+                  <Phone size={16} color={Colors.brandGreen} />
                 </TouchableOpacity>
               </View>
             </View>
@@ -223,15 +185,13 @@ export default function VitalsScreen() {
         </View>
 
         {/* ── SOS Button ── */}
-        <TouchableOpacity
-          style={styles.sosButton}
-          activeOpacity={0.85}
-          onPress={handleSOS}
-        >
+        <TouchableOpacity style={styles.sosButton} activeOpacity={0.85}>
           <Send size={20} color={Colors.white} />
           <Text style={styles.sosButtonText}>Alert emergency contacts</Text>
         </TouchableOpacity>
-        <Text style={styles.sosSubline}>Sends your GPS location via SMS</Text>
+        <Text style={styles.sosSubline}>
+          Sends your GPS location via SMS
+        </Text>
 
         {/* Quick action: view emergency card */}
         <TouchableOpacity

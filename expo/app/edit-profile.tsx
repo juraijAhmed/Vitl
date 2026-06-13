@@ -14,7 +14,7 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
+} from "react-native"
 
 import {
   ChevronLeft,
@@ -24,45 +24,34 @@ import {
   Plus,
   Globe,
 } from "lucide-react-native";
-import Colors from ".././constants/colors";
-import { Fonts } from ".././constants/fonts";
-import { useProfile } from ".././context/ProfileContext";
+import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/fonts";
+import { useProfile } from "@/context/ProfileContext";
 
 export default function EditProfileScreen() {
   const { profile, updateField } = useProfile();
   const router = useRouter();
 
   const [fullName, setFullName] = useState(profile.fullName);
-
   const [allergies, setAllergies] = useState(profile.allergies.join(", "));
-
   const [medications, setMedications] = useState(
     profile.criticalMedications.join(", "),
   );
-
   const [conditions, setConditions] = useState(profile.conditions.join(", "));
+
   const handleSave = () => {
     updateField("fullName", fullName);
     updateField(
       "allergies",
-      allergies
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      allergies.split(",").map((s) => s.trim()).filter(Boolean),
     );
     updateField(
       "criticalMedications",
-      medications
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      medications.split(",").map((s) => s.trim()).filter(Boolean),
     );
     updateField(
       "conditions",
-      conditions
-        .split(",")
-        .map((s) => s.trim())
-        .filter(Boolean),
+      conditions.split(",").map((s) => s.trim()).filter(Boolean),
     );
     router.back();
   };
@@ -71,10 +60,7 @@ export default function EditProfileScreen() {
     <SafeAreaView style={styles.container}>
       {/* Header */}
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <ChevronLeft size={24} color={Colors.nearBlack} />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Edit profile</Text>
@@ -102,11 +88,7 @@ export default function EditProfileScreen() {
 
           {/* Personal Info */}
           <Text style={styles.sectionLabel}>Personal Info</Text>
-          <EditableField
-            label="Full Name"
-            value={fullName}
-            onChange={setFullName}
-          />
+          <EditableField label="Full Name" value={fullName} onChange={setFullName} />
 
           {/* Medical Info */}
           <Text style={styles.sectionLabel}>Medical Info</Text>
@@ -131,10 +113,8 @@ export default function EditProfileScreen() {
           />
 
           {/* Emergency Contacts */}
-          {/* Emergency Contacts */}
           <Text style={styles.sectionLabel}>Emergency Contacts</Text>
-
-          {profile.emergencyContacts.map((contact) => (
+          {profile.emergencyContacts.map((contact, i) => (
             <View key={contact.id} style={styles.contactRow}>
               <View style={styles.contactInfo}>
                 <Text style={styles.contactName}>{contact.name}</Text>
@@ -142,23 +122,15 @@ export default function EditProfileScreen() {
                   {contact.relationship} · {contact.phone}
                 </Text>
               </View>
-
-              <TouchableOpacity
-                style={styles.pencilButton}
-                onPress={() => router.push("/emergency-contacts")}
-              >
+              <TouchableOpacity style={styles.pencilButton}>
                 <Pencil size={16} color={Colors.mediumGray} />
               </TouchableOpacity>
             </View>
           ))}
-
-          <TouchableOpacity
-            style={styles.addContact}
-            onPress={() => router.push("/emergency-contacts")}
-          >
+          <TouchableOpacity style={styles.addContact}>
             <Plus size={16} color={Colors.brandGreen} />
             <Text style={styles.addContactText}>
-              Manage contacts · {profile.emergencyContacts.length} of 3 used
+              Add contact · {profile.emergencyContacts.length} of 3 used
             </Text>
           </TouchableOpacity>
 
@@ -196,12 +168,7 @@ function EditableField({
 }) {
   return (
     <View style={editableStyles.fieldContainer}>
-      <Text
-        style={[
-          editableStyles.fieldLabel,
-          isRed && editableStyles.fieldLabelRed,
-        ]}
-      >
+      <Text style={[editableStyles.fieldLabel, isRed && editableStyles.fieldLabelRed]}>
         {label}
       </Text>
       <TextInput
@@ -225,7 +192,6 @@ const editableStyles = StyleSheet.create({
   fieldContainer: {
     marginBottom: 16,
   },
-
   fieldLabel: {
     fontFamily: Fonts.sansBold,
     fontSize: 13,
@@ -266,68 +232,6 @@ const styles = StyleSheet.create({
   },
   flex: {
     flex: 1,
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    padding: 24,
-  },
-
-  modalCard: {
-    backgroundColor: Colors.white,
-    borderRadius: 16,
-    padding: 20,
-  },
-
-  modalTitle: {
-    fontFamily: Fonts.sansBold,
-    fontSize: 18,
-    color: Colors.nearBlack,
-    marginBottom: 16,
-  },
-
-  modalInput: {
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
-    borderRadius: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: 12,
-    fontFamily: Fonts.sansRegular,
-  },
-
-  modalSaveButton: {
-    backgroundColor: Colors.brandGreen,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 8,
-  },
-
-  modalSaveText: {
-    color: Colors.white,
-    fontFamily: Fonts.sansBold,
-  },
-
-  modalDeleteButton: {
-    backgroundColor: Colors.alertRed,
-    borderRadius: 10,
-    paddingVertical: 14,
-    alignItems: "center",
-    marginTop: 10,
-  },
-
-  modalDeleteText: {
-    color: Colors.white,
-    fontFamily: Fonts.sansBold,
-  },
-
-  modalCancelText: {
-    textAlign: "center",
-    marginTop: 16,
-    color: Colors.mediumGray,
-    fontFamily: Fonts.sansMedium,
   },
   header: {
     flexDirection: "row",

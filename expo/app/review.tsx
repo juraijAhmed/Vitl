@@ -12,8 +12,8 @@ import {
   Platform,
 } from "react-native";
 import { ChevronLeft, Check, Globe } from "lucide-react-native";
-import Colors from ".././constants/colors";
-import { Fonts } from ".././constants/fonts";
+import Colors from "@/constants/colors";
+import { Fonts } from "@/constants/fonts";
 
 export default function ReviewScreen() {
   const router = useRouter();

@@ -29,4 +29,6 @@ export interface MedicalProfile {
   lastSynced: string | null;
   cloudBackupEnabled: boolean;
   biometricLockEnabled: boolean;
+  emergencyId: string | null;
+  
 }

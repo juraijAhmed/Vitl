@@ -1,3 +1,8 @@
+/**
+ * Font configuration for Vitl.
+ * DM Serif Display for the app name and patient name on the ID card.
+ * DM Sans for everything else.
+ */
 import {
   useFonts as useDMSerifDisplay,
   DMSerifDisplay_400Regular,
