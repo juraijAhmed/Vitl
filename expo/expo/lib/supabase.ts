@@ -1,0 +1,21 @@
+import { createClient } from "@supabase/supabase-js";
+
+console.log("SUPABASE URL =", process.env.EXPO_PUBLIC_SUPABASE_URL);
+console.log(
+  "SUPABASE KEY EXISTS =",
+  !!process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY
+);
+
+const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL!;
+const supabaseAnonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY!;
+console.log(
+  "SUPABASE URL:",
+  process.env.EXPO_PUBLIC_SUPABASE_URL
+);
+
+export const supabase = createClient(
+  supabaseUrl,
+  supabaseAnonKey
+
+  
+);
