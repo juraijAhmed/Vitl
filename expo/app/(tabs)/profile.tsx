@@ -61,7 +61,7 @@ export default function ProfileScreen() {
             <View style={styles.settingLeft}>
               <Globe size={18} color={Colors.nearBlack} />
               <View style={styles.settingTextGroup}>
-                <Text style={styles.settingLabel}>Emergency card language</Text>
+                <Text style={styles.settingLabel}>Edit emergency card </Text>
                 <Text style={styles.settingValue}>
                   {profile.languagePreference.nativeLabel}
                 </Text>
@@ -69,51 +69,6 @@ export default function ProfileScreen() {
             </View>
             <ChevronRight size={18} color={Colors.mediumGray} />
           </TouchableOpacity>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Cloud size={18} color={Colors.nearBlack} />
-              <View style={styles.settingTextGroup}>
-                <Text style={styles.settingLabel}>Cloud backup</Text>
-                <Text style={styles.settingValue}>
-                  Securely backed up to your account
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={profile.cloudBackupEnabled}
-              onValueChange={toggleCloudBackup}
-              trackColor={{
-                false: Colors.lightGray,
-                true: Colors.brandGreen,
-              }}
-              thumbColor={Colors.white}
-              ios_backgroundColor={Colors.lightGray}
-            />
-          </View>
-
-          <View style={styles.settingRow}>
-            <View style={styles.settingLeft}>
-              <Fingerprint size={18} color={Colors.nearBlack} />
-              <View style={styles.settingTextGroup}>
-                <Text style={styles.settingLabel}>Biometric lock</Text>
-                <Text style={styles.settingValue}>
-                  Require Face ID / fingerprint to open
-                </Text>
-              </View>
-            </View>
-            <Switch
-              value={profile.biometricLockEnabled}
-              onValueChange={toggleBiometricLock}
-              trackColor={{
-                false: Colors.lightGray,
-                true: Colors.brandGreen,
-              }}
-              thumbColor={Colors.white}
-              ios_backgroundColor={Colors.lightGray}
-            />
-          </View>
-
           <TouchableOpacity style={styles.settingRow}>
             <View style={styles.settingLeft}>
               <Info size={18} color={Colors.nearBlack} />
@@ -125,12 +80,6 @@ export default function ProfileScreen() {
             <ChevronRight size={18} color={Colors.mediumGray} />
           </TouchableOpacity>
         </View>
-
-        {/* Sign Out */}
-        <TouchableOpacity style={styles.signOutButton}>
-          <LogOut size={18} color={Colors.alertRed} />
-          <Text style={styles.signOutText}>Sign out</Text>
-        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
