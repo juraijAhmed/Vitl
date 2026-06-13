@@ -1,7 +1,7 @@
 import * as BackgroundFetch from "expo-background-fetch";
 import * as TaskManager from "expo-task-manager";
 import { loadProfile } from "../database/db";
-import { postEmergencyNotification } from "../app/emergencyNotification";
+import { postEmergencyNotification } from "./emergencyNotification";
 
 const TASK_NAME = "vitl-repost-notification";
 
