@@ -1,13 +1,13 @@
 import createContextHook from "@nkzw/create-context-hook";
 import React, { useState, useCallback, useEffect } from "react";
-import { initDB, saveProfile, loadProfile } from "../database/db";  // ADD THIS
+import { initDB, saveProfile, loadProfile } from "../database/db"; // ADD THIS
 import type {
   MedicalProfile,
   EmergencyContact,
   LanguagePreference,
 } from "../models/Profile";
 
-initDB()
+initDB();
 
 /** Default mock profile for demo — would be loaded from AsyncStorage in production. */
 const defaultProfile: MedicalProfile = {
@@ -20,7 +20,7 @@ const defaultProfile: MedicalProfile = {
   conditions: ["Type 2 Diabetes", "Hypertension"],
   criticalMedications: ["Metformin 500mg", "Lisinopril 10mg"],
   emergencyContacts: [
-        {
+    {
       id: "ec1",
       name: "Anita Sharma",
       relationship: "Mother",
@@ -31,7 +31,7 @@ const defaultProfile: MedicalProfile = {
       id: "ec2",
       name: "Rajesh Sharma",
       relationship: "Brother",
-      phone: "+91 98765 43210",
+      phone: "+91 9390379183",
       priority: "secondary",
     },
   ],
@@ -59,9 +59,8 @@ export interface ProfileContextValue {
 
 export const [ProfileProvider, useProfile] = createContextHook(
   (): ProfileContextValue => {
-
     const [profile, setProfile] = useState<MedicalProfile>(
-      () => loadProfile() ?? defaultProfile  // CHANGE THIS — SQLite first, default as fallback
+      () => loadProfile() ?? defaultProfile, // CHANGE THIS — SQLite first, default as fallback
     );
 
     // ADD THIS — persist every change to SQLite
@@ -73,7 +72,8 @@ export const [ProfileProvider, useProfile] = createContextHook(
     const updateField = useCallback(
       <K extends keyof MedicalProfile>(key: K, value: MedicalProfile[K]) => {
         setProfile((prev) => ({ ...prev, [key]: value }));
-      }, []
+      },
+      [],
     );
 
     const addEmergencyContact = useCallback((contact: EmergencyContact) => {
@@ -112,5 +112,5 @@ export const [ProfileProvider, useProfile] = createContextHook(
       toggleCloudBackup,
       toggleBiometricLock,
     };
-  }
+  },
 );

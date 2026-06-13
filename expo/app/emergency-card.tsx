@@ -12,7 +12,14 @@ import {
   TouchableOpacity,
   ScrollView,
 } from "react-native";
-import { X, Globe, ChevronDown, Phone, ShieldAlert } from "lucide-react-native";
+import {
+  X,
+  Globe,
+  ChevronDown,
+  Phone,
+  ShieldAlert,
+  Users,
+} from "lucide-react-native";
 import Colors from ".././constants/colors";
 import { Fonts } from ".././constants/fonts";
 import { useProfile } from ".././context/ProfileContext";
@@ -184,6 +191,23 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.darkBg,
+  },
+  manageContactsButton: {
+    marginTop: 8,
+    marginBottom: 20,
+    backgroundColor: Colors.forestGreen,
+    borderRadius: 12,
+    paddingVertical: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+  },
+
+  manageContactsText: {
+    fontFamily: Fonts.sansBold,
+    fontSize: 14,
+    color: Colors.white,
   },
   scrollContent: {
     paddingHorizontal: 20,

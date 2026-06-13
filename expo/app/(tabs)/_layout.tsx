@@ -35,24 +35,6 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="history"
-        options={{
-          title: "History",
-          tabBarIcon: ({ color, size }) => (
-            <Clock color={color} size={size} strokeWidth={2} />
-          ),
-        }}
-      />
-      <Tabs.Screen
-        name="vitals"
-        options={{
-          title: "Vitals",
-          tabBarIcon: ({ color, size }) => (
-            <Heart color={color} size={size} strokeWidth={2} />
-          ),
-        }}
-      />
-      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",
