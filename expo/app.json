@@ -21,7 +21,8 @@
           "icon": "./assets/icon.png",
           "color": "#1A3D2E"
         }
-      ]
+      ],
+      "expo-sqlite"
     ],
     "android": {
       "permissions": [
