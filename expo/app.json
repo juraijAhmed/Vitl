@@ -13,34 +13,33 @@
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
     },
-  "plugins": [
+    "plugins": [
+      "expo-router",
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
-          "color": "#1A3D2E",
-          "androidMode": "default"
+          "icon": "./assets/icon.png",
+          "color": "#1A3D2E"
         }
-      ],
-      [
-        "expo-router",
-        {
-          "origin": "https://rork.com/"
-        }
-      ],
-      "expo-font",
-      "expo-web-browser"
+      ]
     ],
     "android": {
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
+        "POST_NOTIFICATIONS",
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE",
         "POST_NOTIFICATIONS"
-      ]
+      ],
+      "package": "com.anonymous.unpr3aerm2to7vy9nrclk"
     },
     "ios": {
       "infoPlist": {
-        "UIBackgroundModes": ["fetch", "remote-notification"]
+        "UIBackgroundModes": [
+          "fetch",
+          "remote-notification"
+        ]
       }
     },
     "web": {
@@ -48,6 +47,12 @@
     },
     "experiments": {
       "typedRoutes": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "1c86e048-8c88-445e-be0f-1a83447bd40d"
+      }
     }
   }
 }

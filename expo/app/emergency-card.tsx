@@ -3,7 +3,7 @@
  * Dark background, bilingual allergy warnings, tap-to-call contacts.
  */
 import { useRouter } from "expo-router";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
   View,
@@ -36,6 +36,8 @@ export default function EmergencyCardScreen() {
   const router = useRouter();
   const [lang, setLang] = useState(profile.languagePreference);
   const [showLangPicker, setShowLangPicker] = useState(false);
+
+  // ADD THIS
 
   return (
     <SafeAreaView style={styles.container}>

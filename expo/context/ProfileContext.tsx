@@ -1,15 +1,20 @@
 import createContextHook from "@nkzw/create-context-hook";
 import React, { useState, useCallback, useEffect } from "react";
-import { initDB, saveProfile, loadProfile } from "../database/db"; // ADD THIS
+import { initDB, saveProfile, loadProfile } from "../database/db";
 import type {
   MedicalProfile,
   EmergencyContact,
   LanguagePreference,
 } from "../models/Profile";
+import {
+  postEmergencyNotification,
+  setupNotificationChannel,
+  requestNotificationPermissions,
+} from "../utils/emergencyNotification";
+import { registerBackgroundTask } from "../utils/backgroundTask";
 
 initDB();
 
-/** Default mock profile for demo — would be loaded from AsyncStorage in production. */
 const defaultProfile: MedicalProfile = {
   id: "VTL-001",
   fullName: "John Doe",
@@ -60,15 +65,31 @@ export interface ProfileContextValue {
 export const [ProfileProvider, useProfile] = createContextHook(
   (): ProfileContextValue => {
     const [profile, setProfile] = useState<MedicalProfile>(
-      () => loadProfile() ?? defaultProfile, // CHANGE THIS — SQLite first, default as fallback
+      () => loadProfile() ?? defaultProfile,
     );
 
-    // ADD THIS — persist every change to SQLite
+    // Init notifications once on mount
     useEffect(() => {
-      saveProfile(profile);
+      async function init() {
+        await setupNotificationChannel();
+        const granted = await requestNotificationPermissions();
+        if (granted) {
+          await registerBackgroundTask();
+          await postEmergencyNotification(profile);
+        }
+      }
+      init();
+    }, []);
+
+    // Persist to SQLite and update notification on every profile change
+    useEffect(() => {
+      async function syncProfile() {
+        await saveProfile(profile);
+        await postEmergencyNotification(profile);
+      }
+      syncProfile();
     }, [profile]);
 
-    // Everything below is completely unchanged
     const updateField = useCallback(
       <K extends keyof MedicalProfile>(key: K, value: MedicalProfile[K]) => {
         setProfile((prev) => ({ ...prev, [key]: value }));
