@@ -1,17 +1,12 @@
 import createContextHook from "@nkzw/create-context-hook";
 import React, { useState, useCallback, useEffect } from "react";
-import { initDB, saveProfile, loadProfile } from "../database/db"; // ADD THIS
+import { initDB, saveProfile, loadProfile } from "../database/db";  // ADD THIS
+import { syncEmergencyProfile } from "../lib/emergencySync";
 import type {
   MedicalProfile,
   EmergencyContact,
   LanguagePreference,
 } from "../models/Profile";
-import {
-  postEmergencyNotification,
-  setupNotificationChannel,
-  requestNotificationPermissions,
-} from "../utils/emergencyNotification";
-import { registerBackgroundTask } from "../utils/backgroundTask";
 
 initDB()
 
@@ -68,14 +63,37 @@ export const [ProfileProvider, useProfile] = createContextHook(
   (): ProfileContextValue => {
 
     const [profile, setProfile] = useState<MedicalProfile>(
-      () => loadProfile() ?? defaultProfile, // CHANGE THIS — SQLite first, default as fallback
+      () => loadProfile() ?? defaultProfile  // CHANGE THIS — SQLite first, default as fallback
     );
 
     // ADD THIS — persist every change to SQLite
-    useEffect(() => {
-      saveProfile(profile);
-    }, [profile]);
+   useEffect(() => {
+  saveProfile(profile);
 
+  async function sync() {
+    try {
+      if (!profile.emergencyId) {
+        const emergencyId = await syncEmergencyProfile(profile);
+
+        setProfile((prev) => ({
+          ...prev,
+          emergencyId,
+        }));
+
+        return;
+      }
+
+      await syncEmergencyProfile(profile);
+    } catch (err) {
+      console.log("SUPABASE SYNC ERROR:", err);
+    }
+  }
+
+  sync();
+}, [profile]);
+console.log("PROFILE EMERGENCY ID:", profile.emergencyId);
+
+    // Everything below is completely unchanged
     const updateField = useCallback(
       <K extends keyof MedicalProfile>(key: K, value: MedicalProfile[K]) => {
         setProfile((prev) => ({ ...prev, [key]: value }));

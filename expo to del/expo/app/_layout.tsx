@@ -4,8 +4,6 @@ import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { ProfileProvider } from "../context/ProfileContext";
-import * as Notifications from "expo-notifications";
-import { router } from "expo-router";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 SplashScreen.preventAutoHideAsync();
 
@@ -40,19 +38,6 @@ export default function RootLayout() {
     SplashScreen.hideAsync();
   }, []);
 
-  useEffect(() => {
-    const subscription = Notifications.addNotificationResponseReceivedListener(
-      (response) => {
-        const screen = response.notification.request.content.data?.screen;
-        if (screen === "emergency-card") {
-          router.push("/emergency-card");
-        }
-      },
-    );
-
-    return () => subscription.remove();
-  }, []);
-  
   return (
     <SafeAreaProvider>
       <QueryClientProvider client={queryClient}>
