@@ -47,6 +47,17 @@ export default function RootLayout() {
         await SplashScreen.hideAsync();
       } catch (_) {}
       setReady(true);
+      // In _layout.tsx test
+      await Notifications.scheduleNotificationAsync({
+        content: {
+          title: "Test",
+          body: "Hello from Vitl",
+        },
+        trigger: {
+          type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+          seconds: 2,
+        },
+      });
     })();
   }, []);
 
@@ -73,7 +84,10 @@ export default function RootLayout() {
               <Stack.Screen name="(tabs)" />
               <Stack.Screen
                 name="review"
-                options={{ presentation: "card", animation: "slide_from_right" }}
+                options={{
+                  presentation: "card",
+                  animation: "slide_from_right",
+                }}
               />
               <Stack.Screen
                 name="emergency-card"
@@ -81,7 +95,10 @@ export default function RootLayout() {
               />
               <Stack.Screen
                 name="edit-profile"
-                options={{ presentation: "card", animation: "slide_from_right" }}
+                options={{
+                  presentation: "card",
+                  animation: "slide_from_right",
+                }}
               />
             </Stack>
           </GestureHandlerRootView>

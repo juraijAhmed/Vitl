@@ -1,13 +1,8 @@
-/**
- * Vitals Screen — the hero ID card.
- * This is the Home tab. Shows the patient's medical ID card
- * with QR code, allergies, conditions, emergency contacts, and SOS button.
- */
+import { useRef, useEffect } from "react";
 import { useRouter } from "expo-router";
 import React from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
-import QRCode from 'react-native-qrcode-svg'
-import { supabase } from "@/lib/supabase";
+import QRCode from "react-native-qrcode-svg";
 import {
   View,
   Text,
@@ -21,41 +16,50 @@ import { AlertTriangle, ChevronRight, Phone, Send } from "lucide-react-native";
 import Colors from "../../constants/colors";
 import { Fonts } from "../../constants/fonts";
 import { useProfile } from "../../context/ProfileContext";
+import { postEmergencyNotification } from "@/utils/emergencyNotification";
 
 export default function VitalsScreen() {
   const { profile } = useProfile();
   const router = useRouter();
+  const qrRef = useRef<{ toDataURL: (cb: (data: string) => void) => void } | null>(null);
+
+  useEffect(() => {
+    if (!profile.emergencyId) return;
+    console.log("emergencyId found:", profile.emergencyId);
+    setTimeout(() => {
+      console.log("qrRef.current:", qrRef.current);
+      qrRef.current?.toDataURL((base64: string) => {
+        console.log("base64 length:", base64?.length);
+        postEmergencyNotification(profile, base64)
+          .then(() => console.log("Notification posted"))
+          .catch((e) => console.log("Notification error:", e));
+      });
+    }, 600);
+  }, [profile.emergencyId]);
+
   const handleSOS = async () => {
     try {
       const { status } = await Location.requestForegroundPermissionsAsync();
-
       if (status !== "granted") {
         alert("Location permission is required.");
         return;
       }
-
       const location = await Location.getCurrentPositionAsync({
         accuracy: Location.Accuracy.High,
       });
-
       const { latitude, longitude } = location.coords;
-
       const mapsLink = `https://maps.google.com/?q=${latitude},${longitude}`;
-
       const message =
         `🚨 SOS ALERT 🚨\n\n` +
         `${profile.fullName} may need immediate assistance.\n\n` +
         `Current Location:\n${mapsLink}`;
-
       const primaryContact = profile.emergencyContacts.find(
         (contact) => contact.priority === "primary",
       );
-
       if (!primaryContact) {
         alert("No primary emergency contact found.");
         return;
       }
-
       const smsUrl = `sms:${primaryContact.phone}?body=${encodeURIComponent(message)}`;
       await Linking.openURL(smsUrl);
     } catch (error) {
@@ -63,22 +67,15 @@ export default function VitalsScreen() {
       alert("Failed to create SOS message.");
     }
   };
+
   const initials = (name: string): string =>
-    name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
+    name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2);
 
   const priorityColor = (p: string): string => {
     switch (p) {
-      case "primary":
-        return Colors.alertRed;
-      case "secondary":
-        return "#E8A838";
-      default:
-        return Colors.mediumGray;
+      case "primary": return Colors.alertRed;
+      case "secondary": return "#E8A838";
+      default: return Colors.mediumGray;
     }
   };
 
@@ -93,31 +90,29 @@ export default function VitalsScreen() {
       >
         {/* ── Hero ID Card ── */}
         <View style={styles.heroCard}>
-          {/* Top row: logo + QR */}
           <View style={styles.cardTopRow}>
             <View>
               <Text style={styles.logoText}>Vitl</Text>
               <Text style={styles.cardSubtitle}>Medical Identity</Text>
             </View>
-            {/* QR placeholder */}
             <View style={styles.qrCode}>
-              <QRCode
-                value={`https://vitl-web.vercel.app/e/${profile.emergencyId}`}
-                size={80}
-              />
+              {profile.emergencyId ? (
+                <QRCode
+                  value={`https://vitl-web.vercel.app/e/${profile.emergencyId}`}
+                  size={52}
+                  getRef={(ref: any) => { qrRef.current = ref; }}
+                />
+              ) : null}
             </View>
           </View>
 
-          {/* Patient name */}
           <Text style={styles.patientName}>{profile.fullName}</Text>
 
-          {/* SCAN IN EMERGENCY label */}
           <View style={styles.scanLabel}>
             <View style={styles.scanDot} />
             <Text style={styles.scanText}>SCAN IN EMERGENCY</Text>
           </View>
 
-          {/* Info chips */}
           <View style={styles.chipRow}>
             <View style={styles.infoChip}>
               <Text style={styles.infoChipValue}>{profile.bloodType}</Text>
@@ -134,7 +129,6 @@ export default function VitalsScreen() {
               <Text style={styles.infoChipLabel}>Language</Text>
             </View>
           </View>
-          <ScrollView/>
         </View>
 
         {/* ── Allergy Band ── */}
@@ -174,15 +168,11 @@ export default function VitalsScreen() {
             <View key={contact.id} style={styles.contactCard}>
               <View style={styles.contactLeft}>
                 <View style={styles.contactAvatar}>
-                  <Text style={styles.avatarText}>
-                    {initials(contact.name)}
-                  </Text>
+                  <Text style={styles.avatarText}>{initials(contact.name)}</Text>
                 </View>
                 <View style={styles.contactInfo}>
                   <Text style={styles.contactName}>{contact.name}</Text>
-                  <Text style={styles.contactRelation}>
-                    {contact.relationship}
-                  </Text>
+                  <Text style={styles.contactRelation}>{contact.relationship}</Text>
                   <View style={styles.contactPriority}>
                     <View
                       style={[
@@ -225,7 +215,6 @@ export default function VitalsScreen() {
         </TouchableOpacity>
         <Text style={styles.sosSubline}>Sends your GPS location via SMS</Text>
 
-        {/* Quick action: view emergency card */}
         <TouchableOpacity
           style={styles.viewCardButton}
           onPress={() => router.push("/emergency-card")}
@@ -239,22 +228,13 @@ export default function VitalsScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.cream,
-  },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 40,
-  },
-  // ── Hero Card ──
+  container: { flex: 1, backgroundColor: Colors.cream },
+  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 40 },
   heroCard: {
     backgroundColor: Colors.forestGreen,
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
-    // Subtle card shadow
     shadowColor: Colors.forestGreen,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.25,
@@ -267,11 +247,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
     marginBottom: 16,
   },
-  logoText: {
-    fontFamily: Fonts.serif,
-    fontSize: 24,
-    color: Colors.white,
-  },
+  logoText: { fontFamily: Fonts.serif, fontSize: 24, color: Colors.white },
   cardSubtitle: {
     fontFamily: Fonts.sansRegular,
     fontSize: 11,
@@ -279,7 +255,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 2,
   },
-  // QR code placeholder
   qrCode: {
     width: 64,
     height: 64,
@@ -288,24 +263,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     padding: 6,
-  },
-  qrInner: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    width: 54,
-    height: 54,
-    gap: 6,
-  },
-  qrModule: {
-    width: 14,
-    height: 14,
-    backgroundColor: Colors.nearBlack,
-    borderRadius: 3,
-  },
-  qrModuleOff: {
-    backgroundColor: "transparent",
-    borderWidth: 1,
-    borderColor: Colors.lightGray,
   },
   patientName: {
     fontFamily: Fonts.serif,
@@ -319,12 +276,7 @@ const styles = StyleSheet.create({
     gap: 8,
     marginBottom: 16,
   },
-  scanDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.brandGreen,
-  },
+  scanDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: Colors.brandGreen },
   scanText: {
     fontFamily: Fonts.sansBold,
     fontSize: 11,
@@ -332,10 +284,7 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 2,
   },
-  chipRow: {
-    flexDirection: "row",
-    gap: 8,
-  },
+  chipRow: { flexDirection: "row", gap: 8 },
   infoChip: {
     backgroundColor: "rgba(255,255,255,0.12)",
     borderRadius: 10,
@@ -357,7 +306,6 @@ const styles = StyleSheet.create({
     textTransform: "uppercase",
     letterSpacing: 1,
   },
-  // ── Allergy Band ──
   allergyBand: {
     backgroundColor: Colors.white,
     borderRadius: 12,
@@ -371,22 +319,9 @@ const styles = StyleSheet.create({
     shadowRadius: 4,
     elevation: 2,
   },
-  allergyHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginBottom: 12,
-  },
-  allergyTitle: {
-    fontFamily: Fonts.sansBold,
-    fontSize: 14,
-    color: Colors.alertRed,
-  },
-  allergyPillRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-  },
+  allergyHeader: { flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 12 },
+  allergyTitle: { fontFamily: Fonts.sansBold, fontSize: 14, color: Colors.alertRed },
+  allergyPillRow: { flexDirection: "row", flexWrap: "wrap", gap: 8 },
   allergyPill: {
     backgroundColor: Colors.white,
     borderRadius: 16,
@@ -395,12 +330,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: Colors.alertRed,
   },
-  allergyPillText: {
-    fontFamily: Fonts.sansMedium,
-    fontSize: 13,
-    color: Colors.nearBlack,
-  },
-  // ── Sections ──
+  allergyPillText: { fontFamily: Fonts.sansMedium, fontSize: 13, color: Colors.nearBlack },
   section: {
     backgroundColor: Colors.white,
     borderRadius: 12,
@@ -428,25 +358,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
   },
-  conditionDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: Colors.brandGreen,
-  },
-  conditionText: {
-    fontFamily: Fonts.sansRegular,
-    fontSize: 15,
-    color: Colors.nearBlack,
-    flex: 1,
-  },
-  noData: {
-    fontFamily: Fonts.sansRegular,
-    fontSize: 14,
-    color: Colors.mediumGray,
-    fontStyle: "italic",
-  },
-  // ── Emergency Contacts ──
+  conditionDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: Colors.brandGreen },
+  conditionText: { fontFamily: Fonts.sansRegular, fontSize: 15, color: Colors.nearBlack, flex: 1 },
+  noData: { fontFamily: Fonts.sansRegular, fontSize: 14, color: Colors.mediumGray, fontStyle: "italic" },
   contactCard: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -455,12 +369,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: Colors.lightGray,
   },
-  contactLeft: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-    flex: 1,
-  },
+  contactLeft: { flexDirection: "row", alignItems: "center", gap: 12, flex: 1 },
   contactAvatar: {
     width: 42,
     height: 42,
@@ -469,49 +378,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  avatarText: {
-    fontFamily: Fonts.sansBold,
-    fontSize: 15,
-    color: Colors.white,
-  },
-  contactInfo: {
-    flex: 1,
-  },
-  contactName: {
-    fontFamily: Fonts.sansBold,
-    fontSize: 15,
-    color: Colors.nearBlack,
-  },
-  contactRelation: {
-    fontFamily: Fonts.sansRegular,
-    fontSize: 13,
-    color: Colors.mediumGray,
-    marginTop: 1,
-  },
-  contactPriority: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    marginTop: 2,
-  },
-  priorityDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-  },
-  priorityText: {
-    fontFamily: Fonts.sansMedium,
-    fontSize: 11,
-  },
-  contactRight: {
-    alignItems: "flex-end",
-    gap: 6,
-  },
-  contactPhone: {
-    fontFamily: Fonts.sansMedium,
-    fontSize: 13,
-    color: Colors.nearBlack,
-  },
+  avatarText: { fontFamily: Fonts.sansBold, fontSize: 15, color: Colors.white },
+  contactInfo: { flex: 1 },
+  contactName: { fontFamily: Fonts.sansBold, fontSize: 15, color: Colors.nearBlack },
+  contactRelation: { fontFamily: Fonts.sansRegular, fontSize: 13, color: Colors.mediumGray, marginTop: 1 },
+  contactPriority: { flexDirection: "row", alignItems: "center", gap: 4, marginTop: 2 },
+  priorityDot: { width: 6, height: 6, borderRadius: 3 },
+  priorityText: { fontFamily: Fonts.sansMedium, fontSize: 11 },
+  contactRight: { alignItems: "flex-end", gap: 6 },
+  contactPhone: { fontFamily: Fonts.sansMedium, fontSize: 13, color: Colors.nearBlack },
   callButton: {
     width: 32,
     height: 32,
@@ -520,7 +395,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  // ── SOS Button ──
   sosButton: {
     backgroundColor: Colors.alertRed,
     borderRadius: 12,
@@ -537,11 +411,7 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
-  sosButtonText: {
-    fontFamily: Fonts.sansBold,
-    fontSize: 16,
-    color: Colors.white,
-  },
+  sosButtonText: { fontFamily: Fonts.sansBold, fontSize: 16, color: Colors.white },
   sosSubline: {
     fontFamily: Fonts.sansRegular,
     fontSize: 12,
@@ -556,9 +426,5 @@ const styles = StyleSheet.create({
     gap: 4,
     paddingVertical: 12,
   },
-  viewCardText: {
-    fontFamily: Fonts.sansMedium,
-    fontSize: 14,
-    color: Colors.brandGreen,
-  },
+  viewCardText: { fontFamily: Fonts.sansMedium, fontSize: 14, color: Colors.brandGreen },
 });
