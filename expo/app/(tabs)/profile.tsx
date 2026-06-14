@@ -27,7 +27,7 @@ import { Fonts } from "../../constants/fonts";
 import { useProfile } from "../../context/ProfileContext";
 
 export default function ProfileScreen() {
-  const { profile, toggleCloudBackup, toggleBiometricLock } = useProfile();
+  const { profile } = useProfile();
   const router = useRouter();
 
   return (
@@ -46,7 +46,7 @@ export default function ProfileScreen() {
             <Shield size={16} color={Colors.cream} />
             <Text style={styles.recoveryTitle}>Recovery Code</Text>
           </View>
-          <Text style={styles.recoveryCode}>{profile.recoveryCode}</Text>
+          <Text style={styles.recoveryCode}>{profile.emergencyId}</Text>
           <Text style={styles.recoveryNote}>
             Use this to restore your profile on a new device.
           </Text>

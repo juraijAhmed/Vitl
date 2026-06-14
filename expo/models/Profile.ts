@@ -23,11 +23,11 @@ export interface MedicalProfile {
   allergies: string[];
   conditions: string[];
   criticalMedications: string[];
+  biometricLockEnabled: boolean
+  cloudBackupEnabled:boolean
   emergencyContacts: EmergencyContact[];
   languagePreference: LanguagePreference;
   recoveryCode: string;
   lastSynced: string | null;
-  cloudBackupEnabled: boolean;
-  biometricLockEnabled: boolean;
   emergencyId: string | null;
 }

@@ -1,12 +1,8 @@
 import createContextHook from "@nkzw/create-context-hook";
-import React, { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect, useRef } from "react";
 import { initDB, saveProfile, loadProfile } from "../database/db";
 import { syncEmergencyProfile } from "../lib/emergencySync";
-import type {
-  MedicalProfile,
-  EmergencyContact,
-  LanguagePreference,
-} from "../models/Profile";
+import type { MedicalProfile, EmergencyContact } from "../models/Profile";
 import {
   postEmergencyNotification,
   setupNotificationChannel,
@@ -18,34 +14,19 @@ initDB();
 
 const defaultProfile: MedicalProfile = {
   id: "VTL-001",
-  fullName: "John Doe",
-  dateOfBirth: "15-04-2005",
-  age: 21,
-  bloodType: "O+",
-  allergies: ["Penicillin", "Peanuts"],
-  conditions: ["Type 2 Diabetes", "Hypertension"],
-  criticalMedications: ["Metformin 500mg", "Lisinopril 10mg"],
-  emergencyContacts: [
-    {
-      id: "ec1",
-      name: "Anita Sharma",
-      relationship: "Mother",
-      phone: "+91 98765 43211",
-      priority: "primary",
-    },
-    {
-      id: "ec2",
-      name: "Rajesh Sharma",
-      relationship: "Brother",
-      phone: "+91 9390379183",
-      priority: "secondary",
-    },
-  ],
+  fullName: "",
+  dateOfBirth: "",
+  age: 0,
+  bloodType: "",
+  allergies: [],
+  conditions: [],
+  criticalMedications: [],
+  emergencyContacts: [],
   languagePreference: {
-    code: "hi",
-    nativeLabel: "हिन्दी",
+    code: "en",
+    nativeLabel: "English",
   },
-  recoveryCode: "VITL-4F2K-9XM1",
+  recoveryCode: "",
   lastSynced: new Date().toISOString(),
   cloudBackupEnabled: true,
   emergencyId: null,
@@ -56,8 +37,9 @@ export interface ProfileContextValue {
   profile: MedicalProfile;
   updateField: <K extends keyof MedicalProfile>(
     key: K,
-    value: MedicalProfile[K],
+    value: MedicalProfile[K]
   ) => void;
+  updateMany: (fields: Partial<MedicalProfile>) => void;
   addEmergencyContact: (contact: EmergencyContact) => void;
   removeEmergencyContact: (id: string) => void;
   toggleCloudBackup: () => void;
@@ -66,55 +48,65 @@ export interface ProfileContextValue {
 
 export const [ProfileProvider, useProfile] = createContextHook(
   (): ProfileContextValue => {
-    const [profile, setProfile] = useState<MedicalProfile>(
-      () => loadProfile() ?? defaultProfile,
-    );
+    const [profile, setProfile] = useState<MedicalProfile>(() => {
+      return loadProfile() ?? defaultProfile;
+    });
 
-    // Init notifications once on mount
+    const emergencyIdRef = useRef<string | null>(null);
+    const initializedRef = useRef(false);
+
+    // Init notifications once
     useEffect(() => {
-      async function init() {
+      (async () => {
         await setupNotificationChannel();
         const granted = await requestNotificationPermissions();
         if (granted) {
           await registerBackgroundTask();
-          await postEmergencyNotification(profile);
         }
-      }
-      init();
+      })();
     }, []);
 
-    // Persist to SQLite and update notification on every profile change
+    // Persistence + sync (NO setProfile here)
     useEffect(() => {
-      async function syncProfile() {
+      if (!initializedRef.current) {
+        initializedRef.current = true;
+        return;
+      }
+
+      const sync = async () => {
         await saveProfile(profile);
         await postEmergencyNotification(profile);
 
-        // avoid syncing on every tiny change
+        // avoid syncing empty onboarding state
         if (!profile.fullName) return;
 
         try {
           const emergencyId = await syncEmergencyProfile(profile);
-
-          if (emergencyId !== profile.emergencyId) {
-            setProfile((prev) => ({
-              ...prev,
-              emergencyId,
-            }));
+          if (emergencyId && emergencyId !== emergencyIdRef.current) {
+            emergencyIdRef.current = emergencyId;
+            // persist only, do NOT re-set state
+            await saveProfile({ ...profile, emergencyId });
           }
-        } catch (err) {
-          console.log("Supabase sync failed:", err);
+        } catch (e) {
+          console.log("Sync failed:", e);
         }
-      }
+      };
 
-      syncProfile();
+      sync();
     }, [profile]);
 
     const updateField = useCallback(
       <K extends keyof MedicalProfile>(key: K, value: MedicalProfile[K]) => {
         setProfile((prev) => ({ ...prev, [key]: value }));
       },
-      [],
+      []
     );
+
+    // Atomic multi-field update — use this instead of multiple updateField
+    // calls to avoid stale-closure overwrites (e.g. in onboarding finish())
+    const updateMany = useCallback((fields: Partial<MedicalProfile>) => {
+      setProfile((prev) => ({ ...prev, ...fields }));
+    }, []);
 
     const addEmergencyContact = useCallback((contact: EmergencyContact) => {
       setProfile((prev) => ({
@@ -147,10 +139,11 @@ export const [ProfileProvider, useProfile] = createContextHook(
     return {
       profile,
       updateField,
+      updateMany,
       addEmergencyContact,
       removeEmergencyContact,
       toggleCloudBackup,
       toggleBiometricLock,
     };
-  },
+  }
 );
