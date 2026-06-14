@@ -1,7 +1,7 @@
 import { Tabs, usePathname } from "expo-router";
 import React from "react";
-import { StyleSheet, Platform, View, Text } from "react-native";
-import { House, Clock, Heart, User } from "lucide-react-native";
+import { StyleSheet, Platform} from "react-native";
+import { House, User } from "lucide-react-native";
 import Colors from "@/constants/colors";
 import { Fonts } from "@/constants/fonts";
 

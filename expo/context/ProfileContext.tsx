@@ -1,6 +1,7 @@
 import createContextHook from "@nkzw/create-context-hook";
 import React, { useState, useCallback, useEffect } from "react";
-import { initDB, saveProfile, loadProfile } from "../database/db"; // ADD THIS
+import { initDB, saveProfile, loadProfile } from "../database/db";
+import { syncEmergencyProfile } from "../lib/emergencySync";
 import type {
   MedicalProfile,
   EmergencyContact,
@@ -13,32 +14,30 @@ import {
 } from "../utils/emergencyNotification";
 import { registerBackgroundTask } from "../utils/backgroundTask";
 
-initDB()
-
+initDB();
 
 const defaultProfile: MedicalProfile = {
   id: "VTL-001",
-  fullName: "Priya Sharma",
-  dateOfBirth: "1992-04-15",
-  age: 34,
+  fullName: "John Doe",
+  dateOfBirth: "15-04-2005",
+  age: 21,
   bloodType: "O+",
-  allergies: ["Penicillin", "Latex", "Peanuts"],
+  allergies: ["Penicillin", "Peanuts"],
   conditions: ["Type 2 Diabetes", "Hypertension"],
   criticalMedications: ["Metformin 500mg", "Lisinopril 10mg"],
-  emergencyId: null,
   emergencyContacts: [
     {
       id: "ec1",
-      name: "Rajesh Sharma",
-      relationship: "Spouse",
-      phone: "+91 98765 43210",
+      name: "Anita Sharma",
+      relationship: "Mother",
+      phone: "+91 98765 43211",
       priority: "primary",
     },
     {
       id: "ec2",
-      name: "Anita Sharma",
-      relationship: "Mother",
-      phone: "+91 98765 43211",
+      name: "Rajesh Sharma",
+      relationship: "Brother",
+      phone: "+91 9390379183",
       priority: "secondary",
     },
   ],
@@ -49,6 +48,7 @@ const defaultProfile: MedicalProfile = {
   recoveryCode: "VITL-4F2K-9XM1",
   lastSynced: new Date().toISOString(),
   cloudBackupEnabled: true,
+  emergencyId: null,
   biometricLockEnabled: false,
 };
 
@@ -66,20 +66,54 @@ export interface ProfileContextValue {
 
 export const [ProfileProvider, useProfile] = createContextHook(
   (): ProfileContextValue => {
-
     const [profile, setProfile] = useState<MedicalProfile>(
-      () => loadProfile() ?? defaultProfile, // CHANGE THIS — SQLite first, default as fallback
+      () => loadProfile() ?? defaultProfile,
     );
 
-    // ADD THIS — persist every change to SQLite
+    // Init notifications once on mount
     useEffect(() => {
-      saveProfile(profile);
+      async function init() {
+        await setupNotificationChannel();
+        const granted = await requestNotificationPermissions();
+        if (granted) {
+          await registerBackgroundTask();
+          await postEmergencyNotification(profile);
+        }
+      }
+      init();
+    }, []);
+
+    // Persist to SQLite and update notification on every profile change
+    useEffect(() => {
+      async function syncProfile() {
+        await saveProfile(profile);
+        await postEmergencyNotification(profile);
+
+        // avoid syncing on every tiny change
+        if (!profile.fullName) return;
+
+        try {
+          const emergencyId = await syncEmergencyProfile(profile);
+
+          if (emergencyId !== profile.emergencyId) {
+            setProfile((prev) => ({
+              ...prev,
+              emergencyId,
+            }));
+          }
+        } catch (err) {
+          console.log("Supabase sync failed:", err);
+        }
+      }
+
+      syncProfile();
     }, [profile]);
 
     const updateField = useCallback(
       <K extends keyof MedicalProfile>(key: K, value: MedicalProfile[K]) => {
         setProfile((prev) => ({ ...prev, [key]: value }));
-      }, []
+      },
+      [],
     );
 
     const addEmergencyContact = useCallback((contact: EmergencyContact) => {
@@ -118,5 +152,5 @@ export const [ProfileProvider, useProfile] = createContextHook(
       toggleCloudBackup,
       toggleBiometricLock,
     };
-  }
+  },
 );
