@@ -37,7 +37,7 @@ export interface ProfileContextValue {
   profile: MedicalProfile;
   updateField: <K extends keyof MedicalProfile>(
     key: K,
-    value: MedicalProfile[K]
+    value: MedicalProfile[K],
   ) => void;
   updateMany: (fields: Partial<MedicalProfile>) => void;
   addEmergencyContact: (contact: EmergencyContact) => void;
@@ -77,15 +77,16 @@ export const [ProfileProvider, useProfile] = createContextHook(
         await saveProfile(profile);
         await postEmergencyNotification(profile);
 
-        // avoid syncing empty onboarding state
         if (!profile.fullName) return;
 
         try {
           const emergencyId = await syncEmergencyProfile(profile);
           if (emergencyId && emergencyId !== emergencyIdRef.current) {
             emergencyIdRef.current = emergencyId;
-            // persist only, do NOT re-set state
-            await saveProfile({ ...profile, emergencyId });
+            const updatedProfile = { ...profile, emergencyId };
+            await saveProfile(updatedProfile);
+            // Re-post notification now that we have the emergencyId
+            await postEmergencyNotification(updatedProfile);
           }
         } catch (e) {
           console.log("Sync failed:", e);
@@ -99,7 +100,7 @@ export const [ProfileProvider, useProfile] = createContextHook(
       <K extends keyof MedicalProfile>(key: K, value: MedicalProfile[K]) => {
         setProfile((prev) => ({ ...prev, [key]: value }));
       },
-      []
+      [],
     );
 
     // Atomic multi-field update — use this instead of multiple updateField
@@ -145,5 +146,5 @@ export const [ProfileProvider, useProfile] = createContextHook(
       toggleCloudBackup,
       toggleBiometricLock,
     };
-  }
+  },
 );
